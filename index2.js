@@ -22,6 +22,15 @@ const DEMO_FROM_SECRET_KEY = new Uint8Array(
     ]
 );
 
+// Get the wallet balance
+const getWalletBalance = async (publicKey) => {
+    const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
+    const walletBalance = await connection.getBalance(
+        new PublicKey(publicKey)
+    );
+    return parseInt(walletBalance)
+};
+
 const transferSol = async () => {
     const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
 
@@ -57,12 +66,23 @@ const transferSol = async () => {
 
     console.log("Airdrop completed for the Sender account");
 
+    // Get the "from" wallet balance
+    const walletBalance = await getWalletBalance(from.publicKey);
+    console.log(`From wallet balance: ${walletBalance / LAMPORTS_PER_SOL} SOL`);
+
+    // 50% balance
+    sendMoney = walletBalance / 2;
+
+    // Get the "to" wallet balance
+    let toBalance = await getWalletBalance(to.publicKey);
+    console.log(`To wallet balance: ${toBalance / LAMPORTS_PER_SOL} SOL`);
+
     // Send money from "from" wallet and into "to" wallet
     var transaction = new Transaction().add(
         SystemProgram.transfer({
             fromPubkey: from.publicKey,
             toPubkey: to.publicKey,
-            lamports: LAMPORTS_PER_SOL / 100
+            lamports: sendMoney
         })
     );
 
@@ -73,6 +93,10 @@ const transferSol = async () => {
         [from]
     );
     console.log('Signature is ', signature);
+
+    // Get the "to" wallet balance
+    toBalance = await getWalletBalance(to.publicKey);
+    console.log(`To wallet balance: ${toBalance / LAMPORTS_PER_SOL} SOL`);
 }
 
 transferSol();
